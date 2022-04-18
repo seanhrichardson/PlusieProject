@@ -1,13 +1,10 @@
 # TESSERACT
 from PIL import Image, ImageOps
 import pytesseract
-
-import keyboard
 import time
 import pyscreenshot as ImageGrab
 import re
 import pyautogui
-
 import math
 
 a = 0.5  #probabily of heads if fair
