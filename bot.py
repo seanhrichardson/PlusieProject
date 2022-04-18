@@ -1,13 +1,16 @@
 # TESSERACT
+
 from PIL import Image, ImageOps
 import pytesseract
 import time
 import pyscreenshot as ImageGrab
 import re
 import pyautogui
+import numpy
 import math
 
-pytesseract.pytesseract.tesseract_cmd = r'tesseract'
+#FOR WINDOWS
+#pytesseract.pytesseract.tesseract_cmd = '<full-path-to-tesseract-executable>'
 
 a = 0.5  #probabily of heads if fair
 b = 0.75 #probability of heads if weighted
@@ -71,10 +74,10 @@ def text_to_heads_tails(image_text):
     return int(result[0]), int(result[1])
 
 def screenshot_heads_tails():
-    im = ImageGrab.grab(bbox=(920, 425, 1100, 500))
-    im = ImageOps.invert(im)
-    im.save("temp/image.png")
-    image = Image.open('temp/image.png')
+    image = ImageGrab.grab(bbox=(920, 425, 1100, 500))
+    image = ImageOps.invert(image)
+    #image.save("temp/image.png")
+    #image = Image.open('temp/image.png')
     image_to_text = pytesseract.image_to_string(image, lang='eng')
     return text_to_heads_tails(image_to_text)
 
@@ -102,11 +105,11 @@ def bad_engine(heads,tails):
         flip5()
 
 def get_flips_left():
-    im = ImageGrab.grab(bbox=(1060, 800, 1200, 850))
-    im = ImageOps.invert(im)
+    image = ImageGrab.grab(bbox=(1060, 800, 1200, 850))
+    image = numpy.invert(image)
     save_name = "temp/num_flips.png"
-    im.save(save_name)
-    image = Image.open(save_name)
+    # image.save(save_name)
+    # image = Image.open(save_name)
     image_to_text = pytesseract.image_to_string(image, lang='eng')
     num = int("".join(filter(str.isdigit, image_to_text)))
     if not (image_to_text[0]).isdigit():
@@ -120,11 +123,11 @@ def game_is_over():
         return False
 
 def game_is_over2():
-    im = ImageGrab.grab(bbox=(700, 500, 1200, 600))
-    im = ImageOps.invert(im)
-    save_name = "temp/game_over_check.png"
-    im.save(save_name)
-    image = Image.open(save_name)
+    image = ImageGrab.grab(bbox=(700, 500, 1200, 600))
+    image = ImageOps.invert(im)
+    # save_name = "temp/game_over_check.png"
+    # image.save(save_name)
+    # image = Image.open(save_name)
     image_to_text = pytesseract.image_to_string(image, lang='eng')
     print(image_to_text)
     print(image_to_text == "Game Over")
