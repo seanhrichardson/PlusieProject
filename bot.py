@@ -7,6 +7,8 @@ import re
 import pyautogui
 import math
 
+pytesseract.pytesseract.tesseract_cmd = r'tesseract'
+
 a = 0.5  #probabily of heads if fair
 b = 0.75 #probability of heads if weighted
 A0 = 0.5 #initial probability of fair
