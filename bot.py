@@ -53,7 +53,7 @@ def prob_fair(n,k):
 
 def type_name():
     time.sleep(.5)
-    pyautogui.moveTo(1000, 780)
+    pyautogui.moveTo(namex, namey)
     time.sleep(.5)
     pyautogui.click()
     time.sleep(.5)
@@ -61,7 +61,7 @@ def type_name():
 
 def type_email():
     time.sleep(.5)
-    pyautogui.moveTo(1000,840)
+    pyautogui.moveTo(emailx,emaily)
     time.sleep(.5)
     pyautogui.click()
     time.sleep(.5)
@@ -69,13 +69,13 @@ def type_email():
 
 def click_submit():
     time.sleep(.5)
-    pyautogui.moveTo(1000,900)
+    pyautogui.moveTo(submitx,submity)
     time.sleep(.5)
     pyautogui.click()
 
 def click_reset():
     time.sleep(.5)
-    pyautogui.moveTo(1000,1050)
+    pyautogui.moveTo(resetx,resety)
     time.sleep(.5)
     pyautogui.click()
 
