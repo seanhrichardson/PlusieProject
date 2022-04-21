@@ -1,4 +1,5 @@
 import pyautogui
+import numpy as np
 
 things = [
 ["top left of heads-tails:", "ht1"],
@@ -12,18 +13,32 @@ things = [
 ["name for leaderboard coordinates", "name"],
 ["email for plushie drawing coordinates", "email"],
 ["submit coords", "submit"],
-["reset coords", "reset"]
+["REFRESH coords", "reset"],
+["animation", "anim"],
+["Score top left", "score1"],
+["Score bottom right", "score2"]
 ]
+
+coords = []
 
 ret = ""
 for field in things:
     input(field[0])
     pos = pyautogui.position()
     varx, vary = str(pos[0]), str(pos[1])
+    coords.append((pos[0],pos[1]))
     ret += field[1] + "x" + "," + field[1] + "y" + "=" + varx + "," + vary + "\n"
+
+print(coords)
+
+np.savetxt("coords.txt", coords)
 
 print("\nCOPY AND PASE THE BELOW INTO BOT CODE")
 print(ret)
+
+input("enter to exit")
+
+
 # str1 = "top left of heads-tails:"
 # input(str1)
 # ret = str1 + "\t" + str(pyautogui.position()) + "\n"

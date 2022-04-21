@@ -17,35 +17,43 @@ b = 0.75 #probability of heads if weighted
 A0 = 0.5 #initial probability of fair
 B0 = 0.5 #intial probability of weighted
 
-#COORDINATES:
-# top left of heads-tails:
-ht1x, ht1y = 916, 412
-# bottom right of heads-tails:
-ht2x, ht2y = 1092, 504
-#1 flip
-flip1x, flip1y = 831, 887
-#fair
-fairx, fairy = 798, 1034
-#cheater
-cheatx, cheaty = 1110, 1024
-#5 flips
-flip5x, flip5y = 1104, 888
-#top of flips left
-fl1x, fl1y = 1059, 801
-#bottom flips left
-fl2x, fl2y = 1255, 839
-#name
-namex, namey = 0,0
-#email
-emailx, emaily = 0,0
-#submit
-submitx, submity = 0,0
-#reset
-resetx, resety = 0,0
+#SETTING COORDINATES
+coords = numpy.loadtxt("coords.txt")
+ht1x,ht1y=      coords[0 ][0],coords[0 ][1]
+ht2x,ht2y=      coords[1 ][0],coords[1 ][1]
+flip1x,flip1y=  coords[2 ][0],coords[2 ][1]
+fairx,fairy=    coords[3 ][0],coords[3 ][1]
+cheatx,cheaty=  coords[4 ][0],coords[4 ][1]
+flip5x,flip5y=  coords[5 ][0],coords[5 ][1]
+fl1x,fl1y=      coords[6 ][0],coords[6 ][1]
+fl2x,fl2y=      coords[7 ][0],coords[7 ][1] 
+namex,namey=    coords[8 ][0],coords[8 ][1]
+emailx,emaily=  coords[9 ][0],coords[9 ][1]
+submitx,submity=coords[10][0],coords[10][1]
+resetx,resety=  coords[11][0],coords[11][1]
+animx,animy=    coords[12][0],coords[12][1]
+score1x,score1y=coords[13][0],coords[13][1]
+score2x,score2y=coords[14][0],coords[14][1]
+
+#MANUAL COORDINATE ENTRY:
+# ht1x,ht1y=913,467
+# ht2x,ht2y=1069,542
+# flip1x,flip1y=831,882
+# fairx,fairy=818,1004
+# cheatx,cheaty=1037,1006
+# flip5x,flip5y=1041,891
+# fl1x,fl1y=1053,806
+# fl2x,fl2y=1207,843
+# namex,namey=915,782
+# emailx,emaily=931,849
+# submitx,submity=927,917
+# resetx,resety=86,82
+# animx,animy=763,948
 
 name_for_leaderboard = "sean"
 email_for_plushie = "seanrichardson98@gmail.com"
 
+total_guesses = 0
 
 def prob_fair(n,k):
     binom = math.comb(n,k)
@@ -79,26 +87,31 @@ def click_reset():
     time.sleep(.5)
     pyautogui.click()
 
+def click_animate():
+    time.sleep(.5)
+    pyautogui.moveTo(animx,animy)
+    time.sleep(.5)
+    pyautogui.click()
+
 def flip5():
-    # pyautogui.moveTo(1200, 900)
     pyautogui.moveTo(flip5x, flip5y)
     pyautogui.click()
 
 def flip():
-    # pyautogui.moveTo(800, 900)
     pyautogui.moveTo(flip1x, flip1y)
     pyautogui.click()
 
 def label_as_cheater():
-    # pyautogui.moveTo(1200, 1000)
     pyautogui.moveTo(cheatx, cheaty)
     pyautogui.click()
     time.sleep(2)
+    reset_check()
 
 def label_as_fair():
     pyautogui.moveTo(fairx, fairy)
     pyautogui.click()
     time.sleep(2)
+    reset_check()
 
 def text_to_heads_tails(image_text):
     result = re.findall(r'\d+', image_text)
@@ -107,8 +120,9 @@ def text_to_heads_tails(image_text):
     return int(result[0]), int(result[1])
 
 def screenshot_heads_tails():
-    # image = ImageGrab.grab(bbox=(920, 425, 1100, 500))
-    image = ImageGrab.grab(bbox=(ht1x, ht1y, ht2x, ht2y))
+    # image = ImageGrab.grab(bbox=(ht1x, ht1y, ht2x, ht2y))
+    # image = numpy.invert(image)
+    image = pyautogui.screenshot(region=(ht1x,ht1y, ht2x, ht2y))
     image = numpy.invert(image)
     #image.save("temp/image.png")
     #image = Image.open('temp/image.png')
@@ -138,11 +152,33 @@ def bad_engine(heads,tails):
     else:
         flip5()
 
-def get_flips_left():
-    # image = ImageGrab.grab(bbox=(1060, 800, 1200, 850))
-    image = ImageGrab.grab(bbox=(fl1x, fl1y, fl2x, fl2y))
+def get_flips_and_score():
+    image_flips = ImageGrab.grab(bbox=(fl1x, fl1y, fl2x, fl2y))
+    image_score = ImageGrab.grab(bbox=(score1x, score1y, score2x, score2y))
+    image_score = numpy.invert(image_score)
+    score_text = pytesseract.image_to_string(image_score, lang='eng')
+    score = int("".join(filter(str.isdigit, score_text)))
+    image_flips = numpy.invert(image_flips)
+    flips_text = pytesseract.image_to_string(image_flips, lang='eng')
+    flips = int("".join(filter(str.isdigit, flips_text)))
+    return flips, score
+
+
+def get_score():
+    # image = ImageGrab.grab(bbox=(score1x, score1y, score2x, score2y))
+    # image = numpy.invert(image)
+    image = pyautogui.screenshot(region=(score1x,score1y, score2x, score2y))
     image = numpy.invert(image)
-    save_name = "temp/num_flips.png"
+    image_to_text = pytesseract.image_to_string(image, lang='eng')
+    num = int("".join(filter(str.isdigit, image_to_text)))
+    return num
+
+def get_flips_left():
+    # image = ImageGrab.grab(bbox=(fl1x, fl1y, fl2x, fl2y))
+    # image = numpy.invert(image)
+    image = pyautogui.screenshot(region=(fl1x,fl1y, fl2x, fl2y))
+    image = numpy.invert(image)
+    # save_name = "temp/num_flips.png"
     # image.save(save_name)
     # image = Image.open(save_name)
     image_to_text = pytesseract.image_to_string(image, lang='eng')
@@ -154,51 +190,43 @@ def get_flips_left():
 def game_is_over():
     if get_flips_left() < 0:
         return True
+    elif get_flips_left() == 0 and screenshot_heads_tails() == (0,0):
+        return True
     else:
         return False
 
-def game_is_over2():
-    image = ImageGrab.grab(bbox=(700, 500, 1200, 600))
-    image = numpy.invert(im)
-    # save_name = "temp/game_over_check.png"
-    # image.save(save_name)
-    # image = Image.open(save_name)
-    image_to_text = pytesseract.image_to_string(image, lang='eng')
-    print(image_to_text)
-    print(image_to_text == "Game Over")
-    if image_to_text == "Game Over\n":
-        return True
-    return False
-    # return text_to_heads_tails(image_to_text)
+def log(is_done):
+    f = open("log.txt", "a")  # append mode
+    flips, score = get_flips_and_score()
+    f.write("SCORE:\t" + str(score) + "\n")
+    f.write("FLIPS LEFT:\t" + str(flips) + "\n")
+    if is_done:
+        f.write("-------------------------log-------")
+    f.close()
 
-# time.sleep(2)
-# while True:
-#     time.sleep(0.5)
-#     print(get_flips_left())
-#     print(game_is_over())
-
-
-time.sleep(2)
-while True:
-    while True:
-        time.sleep(0.5)
-        print("click!")
-        if (game_is_over()):
-            break
-        ht = screenshot_heads_tails()
-        if get_flips_left() > 0:
-            engine(ht[0],ht[1])
-        else:
-            engine_no_flips_left(ht[0],ht[1])
-
+def reset_procedure():
+    log(True)
     time.sleep(5)
     type_name()
     type_email()
     click_submit()
     time.sleep(30)
     click_reset()
-    time.sleep(5)
+    time.sleep(20)
+    click_animate()
 
+def reset_check():
+    if game_is_over():
+        reset_procedure()
+
+time.sleep(2)
+while True:
+    ht = screenshot_heads_tails()
+    if get_flips_left() > 0:
+        bad_engine(ht[0],ht[1])
+    else:
+        engine_no_flips_left(ht[0],ht[1])
+    #log(False)
 
 #STUFF:
 # time.sleep(2)
