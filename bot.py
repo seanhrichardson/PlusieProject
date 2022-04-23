@@ -63,9 +63,27 @@ flips_image = None
 ht_image = None
 just_guessed = False
 
+## int n: total number of flips
+## int k: number of heads
+## Returns: probability that the coin was fair, given the current number of flips and heads.
 def prob_fair(n,k):
     binom = math.comb(n,k)
     return (binom*a**k*(1-a)**(n-k)*A0)/(A0*binom*a**k*(1-a)**(n-k)+B0*binom*b**k*(1-b)**(n-k))
+
+## int n: total number of flips
+## int k: number of heads
+## Returns: minimum number of flips before we might reach a decision.
+def min_needed_flips(n,k):
+    num_tails_for_fair = 1
+    while prob_fair(n+num_tails_for_fair,k) < thresh:
+        num_tails_for_fair += 1
+    if num_tails_for_fair == 1:
+        return num_tails_for_fair
+
+    num_heads_for_bias = 1
+    while prob_fair(n+num_heads_for_bias, k + num_heads_for_bias) > 1-thresh:
+        num_heads_for_bias += 1
+    return math.min(num_tails_for_fair, num_heads_for_bias)
 
 def type_name():
     time.sleep(.5)
@@ -147,7 +165,9 @@ def engine(heads,tails):
     elif prob_fair(heads+tails,heads) <= 1-thresh:
         label_as_cheater()
     else:
-        flip()
+        num_to_flip = min_needed_flips(heads+tails,heads)
+        for i in range(num_to_flip):
+            flip()
         just_guessed = False
     return just_guessed
 
@@ -261,7 +281,7 @@ if __name__ == "__main__":
                 just_guessed = engine_no_flips_left(ht[0],ht[1])
             elif flips0-flips_used == 30:
                 flip()
-            else: 
+            else:
                 just_guessed = engine(ht[0],ht[1])
             flips_used += 1
             if just_guessed:
@@ -280,7 +300,7 @@ if __name__ == "__main__":
                     score += 1
                 log(False,flips1,score)
                 live_update(flips1,score) #probably comment this out
-                break 
+                break
 
 
 
@@ -297,7 +317,7 @@ if __name__ == "__main__":
 # time.sleep(2)
 # while True:
 #     time.sleep(1)
-#     if keyboard.is_pressed('q'):  # if key 'q' is pressed 
+#     if keyboard.is_pressed('q'):  # if key 'q' is pressed
 #         break  # finishing the loop
 #     ht = screenshot_heads_tails()
 #     engine(ht[0],ht[1])
@@ -309,7 +329,7 @@ if __name__ == "__main__":
 # # while True:
 # #     time.sleep(1)
 # #     print("test1")
-# #     if keyboard.is_pressed('q'):  # if key 'q' is pressed 
+# #     if keyboard.is_pressed('q'):  # if key 'q' is pressed
 # #         print('You Pressed A Key!')
 # #         break  # finishing the loop
 
