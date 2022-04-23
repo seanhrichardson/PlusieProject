@@ -7,10 +7,6 @@ import pyautogui
 import numpy
 import math
 
-
-#OPTIONAL
-import os
-
 #FOR WINDOWS
 #pytesseract.pytesseract.tesseract_cmd = '<full-path-to-tesseract-executable>'
 
@@ -55,13 +51,6 @@ score2x,score2y=coords[14][0],coords[14][1]
 name_for_leaderboard = "sean"
 email_for_plushie = "seanrichardson98@gmail.com"
 
-total_guesses = 0
-
-#GLOBAL VARIABLES:
-score_image = None
-flips_image = None
-ht_image = None
-just_guessed = False
 
 def prob_fair(n,k):
     binom = math.comb(n,k)
@@ -126,10 +115,6 @@ def text_to_heads_tails(image_text):
 def get_heads_tails():
     image = ImageGrab.grab(bbox=(ht1x, ht1y, ht2x, ht2y))
     image = numpy.invert(image)
-    # image = pyautogui.screenshot(region=(ht1x,ht1y, ht2x, ht2y))
-    # image = numpy.invert(image)
-    #image.save("temp/image.png")
-    #image = Image.open('temp/image.png')
     image_to_text = pytesseract.image_to_string(image, lang='eng')
     return text_to_heads_tails(image_to_text)
 
@@ -151,36 +136,9 @@ def engine(heads,tails):
         just_guessed = False
     return just_guessed
 
-def bad_engine(heads,tails):
-    just_guessed = True
-    thresh = 0.9
-    if prob_fair(heads+tails,heads) >= thresh:
-        label_as_cheater()
-    elif prob_fair(heads+tails,heads) <= 1-thresh:
-        label_as_fair()
-    else:
-        flip()
-        just_guessed = False
-    return just_guessed
-
-def get_flips_and_score():
-    image_flips = ImageGrab.grab(bbox=(fl1x, fl1y, fl2x, fl2y))
-    image_score = ImageGrab.grab(bbox=(score1x, score1y, score2x, score2y))
-    # image_flips.save("temp/image_flips_end.png")
-    # image_score.save("temp/image_score_end.png")
-    image_score = numpy.invert(image_score)
-    score_text = pytesseract.image_to_string(image_score, lang='eng')
-    score = int("".join(filter(str.isdigit, score_text)))
-    image_flips = numpy.invert(image_flips)
-    flips_text = pytesseract.image_to_string(image_flips, lang='eng')
-    flips = int("".join(filter(str.isdigit, flips_text)))
-    return flips, score
-
 def get_score():
     image = ImageGrab.grab(bbox=(score1x, score1y, score2x, score2y))
     image = numpy.invert(image)
-    # image = pyautogui.screenshot(region=(score1x,score1y, score2x, score2y))
-    # image = numpy.invert(image)
     image_to_text = pytesseract.image_to_string(image, lang='eng')
     num = int("".join(filter(str.isdigit, image_to_text)))
     return num
@@ -188,11 +146,6 @@ def get_score():
 def get_flips_left():
     image = ImageGrab.grab(bbox=(fl1x, fl1y, fl2x, fl2y))
     image = numpy.invert(image)
-    # image = pyautogui.screenshot(region=(fl1x, fl1y, fl2x, fl2y))
-    # image = numpy.invert(image)
-    # save_name = "temp/num_flips.png"
-    # image.save(save_name)
-    # image = Image.open(save_name)
     image_to_text = pytesseract.image_to_string(image, lang='eng')
     num = int("".join(filter(str.isdigit, image_to_text)))
     if not (image_to_text[0]).isdigit():
@@ -206,18 +159,6 @@ def game_is_over():
         return True
     else:
         return False
-
-def log(is_done, flips, score):
-    f = open("log.txt", "a")  # append mode
-    f.write("SCORE:\t" + str(score) + "\n")
-    f.write("FLIPS LEFT:\t" + str(flips) + "\n")
-    if is_done:
-        f.write("-------------------------------" + "\n")
-    f.close()
-    if is_done:
-        f = open("log_sum.txt", "a")
-        f.write("SCORE:\t" + str(score) + "\n")
-        f.close()
 
 def reset_procedure():
     time.sleep(5)
@@ -233,22 +174,13 @@ def reset_check():
     if game_is_over():
         reset_procedure()
 
-def live_update(flips,score):
-    f = open("live.txt", "w")
-    f.write("SCORE:\t" + str(score) + "\n")
-    f.write("FLIPS LEFT:\t" + str(flips) + "\n")
-    f.close()
-    path = "/home/sean/"
-    src = path + 'Desktop/fun/primer/live.txt'
-    dst = path + 'Dropbox/live.txt'
-    os.popen(f"cp {src} {dst}")
-
 if __name__ == "__main__":
+    just_guessed = False
     score = get_score()
     flips0 = 100
     flips1 = 100
     while True:
-        #beginning of new round
+        #BEGINNING OF NEW ROUND
         flips0 = flips1
         flips_used = 0
         if flips0 < 0:
@@ -271,49 +203,10 @@ if __name__ == "__main__":
                 flips1 = get_flips_left()
                 if flips1 < 0:
                     #if game is over
-                    log(True,flips1,score)
                     reset_procedure()
                     flips1 = 100
                     score = 0
                     break
                 if -1*flips_used < flips1-flips0:
                     score += 1
-                log(False,flips1,score)
-                live_update(flips1,score) #probably comment this out
-                break 
-
-
-
-# time.sleep(2)
-# while True:
-#     ht = screenshot_heads_tails()
-#     if get_flips_left() > 0:
-#         bad_engine(ht[0],ht[1])
-#     else:
-#         engine_no_flips_left(ht[0],ht[1])
-#     #log(False)
-
-#STUFF:
-# time.sleep(2)
-# while True:
-#     time.sleep(1)
-#     if keyboard.is_pressed('q'):  # if key 'q' is pressed 
-#         break  # finishing the loop
-#     ht = screenshot_heads_tails()
-#     engine(ht[0],ht[1])
-
-
-# # ImageGrab.grab_to_file('images/im.png')
-
-# #KEYPRESS:
-# # while True:
-# #     time.sleep(1)
-# #     print("test1")
-# #     if keyboard.is_pressed('q'):  # if key 'q' is pressed 
-# #         print('You Pressed A Key!')
-# #         break  # finishing the loop
-
-# #TESSERACT:
-# image = Image.open('temp/image.png')
-# image_to_text = pytesseract.image_to_string(image, lang='eng')
-# print(heads_tails(image_to_text))
+                break
