@@ -141,7 +141,7 @@ def engine_no_flips_left(heads,tails):
 
 def engine(heads,tails):
     just_guessed = True
-    thresh = 0.75
+    thresh = 0.78
     if prob_fair(heads+tails,heads) >= thresh:
         label_as_fair()
     elif prob_fair(heads+tails,heads) <= 1-thresh:
@@ -153,7 +153,7 @@ def engine(heads,tails):
 
 def bad_engine(heads,tails):
     just_guessed = True
-    thresh = 0.9
+    thresh = 0.90
     if prob_fair(heads+tails,heads) >= thresh:
         label_as_cheater()
     elif prob_fair(heads+tails,heads) <= 1-thresh:
@@ -207,10 +207,11 @@ def game_is_over():
     else:
         return False
 
-def log(is_done, flips, score):
+def log(is_done, flips, score, total_guesses):
     f = open("log.txt", "a")  # append mode
-    f.write("SCORE:\t" + str(score) + "\n")
+    f.write("SCORE:\t" + str(score) + "\t")
     f.write("FLIPS LEFT:\t" + str(flips) + "\n")
+    f.write("TOTAL GUESSES:\t" + str(total_guesses) + "\n")
     if is_done:
         f.write("-------------------------------" + "\n")
     f.close()
@@ -233,17 +234,25 @@ def reset_check():
     if game_is_over():
         reset_procedure()
 
-def live_update(flips,score):
+def live_update(flips,score,total_guesses):
     f = open("live.txt", "w")
     f.write("SCORE:\t" + str(score) + "\n")
     f.write("FLIPS LEFT:\t" + str(flips) + "\n")
+    f.write("TOTAL GUESSES:\t" + str(total_guesses) + "\n")
     f.close()
     path = "/home/sean/"
     src = path + 'Desktop/fun/primer/live.txt'
     dst = path + 'Dropbox/live.txt'
     os.popen(f"cp {src} {dst}")
 
+def save_total_guesses(total_gusses):
+    np.savetxt("total_guess.txt",total_guesses)
+
+def get_total_guesses():
+    return numpy.loadtxt("total_guesses.txt")
+
 if __name__ == "__main__":
+    total_guesses = get_total_guesses()
     score = get_score()
     flips0 = 100
     flips1 = 100
@@ -255,6 +264,8 @@ if __name__ == "__main__":
             reset_procedure()
         while True:
             #LOOP FOR EACH ROUND
+            if score >= 4525:
+                quit()
             ht = get_heads_tails()
             #engine
             if flips0-flips_used <= 0:
@@ -271,15 +282,17 @@ if __name__ == "__main__":
                 flips1 = get_flips_left()
                 if flips1 < 0:
                     #if game is over
-                    log(True,flips1,score)
+                    log(True,flips1,score,total_guesses)
                     reset_procedure()
                     flips1 = 100
                     score = 0
+                    total_guesses = 0
+                    save_total_guesses(total_guesses)
                     break
                 if -1*flips_used < flips1-flips0:
                     score += 1
-                log(False,flips1,score)
-                live_update(flips1,score) #probably comment this out
+                log(False,flips1,score,total_guesses)
+                live_update(flips1,score,total_guesses) #probably comment this out
                 break 
 
 
