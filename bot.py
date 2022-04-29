@@ -1,15 +1,16 @@
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageGrab
 import pytesseract
 import time
-import pyscreenshot as ImageGrab
 import re
 import pyautogui
 import numpy
 import math
 
-
 #OPTIONAL
 import os
+
+GOAL = 3500
+THRESH = 0.75
 
 #FOR WINDOWS
 #pytesseract.pytesseract.tesseract_cmd = '<full-path-to-tesseract-executable>'
@@ -63,9 +64,27 @@ flips_image = None
 ht_image = None
 just_guessed = False
 
+## int n: total number of flips
+## int k: number of heads
+## Returns: probability that the coin was fair, given the current number of flips and heads.
 def prob_fair(n,k):
     binom = math.comb(n,k)
     return (binom*a**k*(1-a)**(n-k)*A0)/(A0*binom*a**k*(1-a)**(n-k)+B0*binom*b**k*(1-b)**(n-k))
+
+## int n: total number of flips
+## int k: number of heads
+## Returns: minimum number of flips before we might reach a decision.
+def min_needed_flips(n,k):
+    num_tails_for_fair = 1
+    while prob_fair(n+num_tails_for_fair,k) < THRESH:
+        num_tails_for_fair += 1
+    if num_tails_for_fair == 1:
+        return num_tails_for_fair
+
+    num_heads_for_bias = 1
+    while prob_fair(n+num_heads_for_bias, k + num_heads_for_bias) > 1-THRESH:
+        num_heads_for_bias += 1
+    return min(num_tails_for_fair, num_heads_for_bias)
 
 def type_name():
     time.sleep(.5)
@@ -117,6 +136,12 @@ def label_as_fair():
     pyautogui.moveTo(fairx, fairy)
     pyautogui.click()
 
+def submit_old_run():
+    pyautogui.moveTo(1420,896)
+    pyautogui.click()
+    time.sleep(0.5)
+
+
 def text_to_heads_tails(image_text):
     result = re.findall(r'\d+', image_text)
     if len(result) < 2:
@@ -141,15 +166,19 @@ def engine_no_flips_left(heads,tails):
 
 def engine(heads,tails):
     just_guessed = True
-    thresh = 0.78
-    if prob_fair(heads+tails,heads) >= thresh:
+    flips_used = 0
+    if prob_fair(heads+tails,heads) >= THRESH:
         label_as_fair()
-    elif prob_fair(heads+tails,heads) <= 1-thresh:
+    elif prob_fair(heads+tails,heads) <= 1-THRESH:
         label_as_cheater()
     else:
-        flip()
+        num_to_flip = min_needed_flips(heads+tails,heads)
+        for i in range(num_to_flip):
+            flips_used += 1
+            flip()
+            time.sleep(0.05)
         just_guessed = False
-    return just_guessed
+    return just_guessed, flips_used
 
 def bad_engine(heads,tails):
     just_guessed = True
@@ -209,9 +238,9 @@ def game_is_over():
 
 def log(is_done, flips, score, total_guesses):
     f = open("log.txt", "a")  # append mode
-    f.write("SCORE:\t" + str(score) + "\t")
-    f.write("FLIPS LEFT:\t" + str(flips) + "\n")
-    f.write("TOTAL GUESSES:\t" + str(total_guesses) + "\n")
+    f.write(str(score) + "\t")
+    f.write(str(flips) + "\t")
+    f.write(str(total_guesses) + "\n")
     if is_done:
         f.write("-------------------------------" + "\n")
     f.close()
@@ -220,19 +249,17 @@ def log(is_done, flips, score, total_guesses):
         f.write("SCORE:\t" + str(score) + "\n")
         f.close()
 
-def reset_procedure():
-    time.sleep(5)
-    type_name()
-    type_email()
-    click_submit()
-    time.sleep(30)
-    click_reset()
-    time.sleep(20)
-    click_animate()
-
-def reset_check():
+def reset_procedure(score):
+    if score < GOAL:
+        click_reset()
+        time.sleep(15)
+        click_animate()
+    else: 
+        quit()
+    
+def reset_check(score):
     if game_is_over():
-        reset_procedure()
+        reset_procedure(score)
 
 def live_update(flips,score,total_guesses):
     f = open("live.txt", "w")
@@ -245,11 +272,19 @@ def live_update(flips,score,total_guesses):
     dst = path + 'Dropbox/live.txt'
     os.popen(f"cp {src} {dst}")
 
-def save_total_guesses(total_gusses):
-    np.savetxt("total_guess.txt",total_guesses)
+def save_total_guesses(total_guesses):
+    f = open("total_guesses.txt", "w")
+    f.write(str(total_guesses))
 
 def get_total_guesses():
-    return numpy.loadtxt("total_guesses.txt")
+    total_guesses = -1
+    with open('total_guesses.txt') as f:
+        total_guesses = int(f.readline())
+    return total_guesses
+
+def set_thresh(score, flips):
+    inter = flips / (4540 - score)
+    return 0.75 + 0.15 * (2 / (1 + math.exp(-0.3 * inter)) - 1)
 
 if __name__ == "__main__":
     total_guesses = get_total_guesses()
@@ -257,33 +292,37 @@ if __name__ == "__main__":
     flips0 = 100
     flips1 = 100
     while True:
-        #beginning of new round
+        if score >= GOAL:
+            quit()
         flips0 = flips1
         flips_used = 0
         if flips0 < 0:
-            reset_procedure()
+            reset_procedure(score)
         while True:
             #LOOP FOR EACH ROUND
-            if score >= 4525:
+            if score >= 4535:
                 quit()
             ht = get_heads_tails()
+            THRESH = set_thresh(score, flips0 - flips_used)
             #engine
             if flips0-flips_used <= 0:
                 just_guessed = engine_no_flips_left(ht[0],ht[1])
             elif flips0-flips_used == 30:
                 flip()
-            else: 
-                just_guessed = engine(ht[0],ht[1])
-            flips_used += 1
+                flips_used += 1
+            else:
+                just_guessed, delta_flips = engine(ht[0],ht[1])
+                flips_used += delta_flips
             if just_guessed:
                 #end of round
-                time.sleep(1)
+                time.sleep(2)
+                # submit_old_run()
                 flips_used -= 1
                 flips1 = get_flips_left()
-                if flips1 < 0:
+                if flips1 < 20:
                     #if game is over
                     log(True,flips1,score,total_guesses)
-                    reset_procedure()
+                    reset_procedure(score)
                     flips1 = 100
                     score = 0
                     total_guesses = 0
@@ -291,7 +330,9 @@ if __name__ == "__main__":
                     break
                 if -1*flips_used < flips1-flips0:
                     score += 1
+                total_guesses += 1
                 log(False,flips1,score,total_guesses)
+                save_total_guesses(total_guesses)
                 live_update(flips1,score,total_guesses) #probably comment this out
                 break 
 
@@ -310,7 +351,7 @@ if __name__ == "__main__":
 # time.sleep(2)
 # while True:
 #     time.sleep(1)
-#     if keyboard.is_pressed('q'):  # if key 'q' is pressed 
+#     if keyboard.is_pressed('q'):  # if key 'q' is pressed
 #         break  # finishing the loop
 #     ht = screenshot_heads_tails()
 #     engine(ht[0],ht[1])
@@ -322,7 +363,7 @@ if __name__ == "__main__":
 # # while True:
 # #     time.sleep(1)
 # #     print("test1")
-# #     if keyboard.is_pressed('q'):  # if key 'q' is pressed 
+# #     if keyboard.is_pressed('q'):  # if key 'q' is pressed
 # #         print('You Pressed A Key!')
 # #         break  # finishing the loop
 

@@ -14,7 +14,7 @@ def prob_fair(n,k):
 
 #STRATEGY:
 #can return: True (guess fair), False (guess cheater), or flip (flip again)
-def engine(heads,tails,thesh):
+def engine(heads,tails,thresh):
     # thresh = 0.75
     if prob_fair(heads+tails,heads) >= thresh:
         return True #guess is fair
@@ -75,8 +75,7 @@ def round(flips_left,thresh):
             return calculate_net_flips(heads+tails,action,is_fair), is_fair == False
 
 #Simulates the game. Returns the score.
-def game(thresh):
-    flips = 100
+def game(thresh, flips):
     correct = 0
     while (flips >= 0):
         net_flips, was_correct = round(flips,thresh)
@@ -93,20 +92,32 @@ def game_100():
             high = score
     return high
 
-# for thresh in np.linspace(0.86,0.86,1):
+f = open("data.npy", "wb")
+for flips in np.linspace(0,2000,21):
+    num_games = 1000
+    dist = np.empty(num_games)
+    for i in range(num_games):
+        score = game(0.75, flips)
+        dist[i] = score
+    np.save(f,dist)
+    print("flips:\t   ", flips, "\t", "median\t", np.median(dist))
+f.close()
+
+# for thresh in np.linspace(0.75,0.90,16):
 #     total_flips = 0
-#     num_rounds = 100000
+#     num_rounds = 1000000
 #     for i in range(num_rounds):
 #         total_flips += round(1000,thresh)[0]
 #     flips_per_round = total_flips/num_rounds
 #     print(thresh, "\t", flips_per_round)
 
-for thresh in np.linspace(0.75,0.82,8):
-    goal = 4537
-    num_games = 10000
-    num_goal_games = 0
-    for i in range(num_games):
-        score = game(thresh)
-        if score >= goal:
-            num_goal_games += 1
-    print(thresh, "\t", num_goal_games/num_games)
+
+# for thresh in np.linspace(0.75,0.82,8):
+#     goal = 4537
+#     num_games = 10000
+#     num_goal_games = 0
+#     for i in range(num_games):
+#         score = game(thresh)
+#         if score >= goal:
+#             num_goal_games += 1
+#     print(thresh, "\t", num_goal_games/num_games)
